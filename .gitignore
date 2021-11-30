@@ -1,7 +1,3 @@
-
-/client/css/
-/client/fonts/
-/client/images/
-/client/scss/
 /server/package-lock.json
 /package-lock.json
+/server/node_modules
