@@ -2,6 +2,6 @@
 
 Require: NodeJS, Local Postgresql Database
 
-cd server
-npm install
+cd server <br>
+npm install <br>
 npm run dev
