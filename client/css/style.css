@@ -249,6 +249,15 @@ body {
   -o-transform: translate(-50%, -50%);
   -ms-transform: translate(-50%, -50%); }
 
+.alert {
+  width: 100%;
+  text-align: center;
+  font-weight: bold;
+  background-color: #c76b6b;
+  color: white;
+  position: relative;
+}
+
 .signup {
   margin-bottom: 150px; }
 
