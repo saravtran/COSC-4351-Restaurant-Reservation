@@ -43,9 +43,21 @@ app.get('/', (req, res) => {
     res.render(path.join(dirname + '/index.html'));
 });
 
-app.get('/signup', (req, res) => {
-    res.render(path.join(dirname + '/signup.html'));
+app.get("/available_tables", async(req, res) => {
+  const availableTables = await getAvailableTables();
+  console.log(availableTables);
+  res.render(path.join(dirname + '/available_tables.html'), {availableTables:availableTables});
 });
+
+app.get('/redirect_page', (req, res) => {
+  result = req.session.table_num
+  console.log(req.session);
+  res.render(path.join(dirname + '/redirect_page.html'), {message: req.flash('error')});
+})
+
+app.get('/signup', (req, res) => {
+    res.render(path.join(dirname + '/signup.html'), {message: req.flash('error')});
+})
 
 app.get('/signin', (req, res) => {
     res.render(path.join(dirname + '/signin.html'), {message: req.flash('error')});
@@ -96,20 +108,36 @@ app.post("/signin",
   })
 );
 
+app.post("/available_tables", async(req, res) => {
+//   res.json([{
+//     table_num: req.body.table_num,
+//     availability: req.body.availability,
+//     table_size: req.body.table_size
+//  }])
+  req.session.availability = req.body.availability
+  req.session.table_num = req.body.table_num;
+  req.session.table_size = req.body.table_size;
+  req.session.save() 
+  // console.log(req.body.table_num);
+  // console.log(req.session);
+  // res.redirect("/redirect_page");
+});
+
 app.post("/signup", async(req, res) => {
     let {name, email, username, pass, re_pass} = req.body;
     let errors = [];
     console.log(req.body['agree-term'])
 
-    if (!name || !email || !pass || !username || !re_pass || !req.body['agree-term']) {
-      errors.push({message: "Please enter all fields"});}
+    if (!name || !email || !pass || !username || !re_pass) {
+      errors.push({message: " Please enter all fields"});}
     if (pass !== re_pass) {
-      errors.push({message: "Passwords do not match"});}
+      errors.push({message: " Passwords do not match"});}
     if (req.body['agree-term'] != "on") {
-      errors.push({message: "Please review our terms and conditions"});}
+      errors.push({message: " Please review our terms and conditions."});}
     
     if (errors.length > 0) {
-      res.redirect("/index");
+      req.flash('error', errors[0].message);
+      res.redirect("/signup");
     }
 
     else {
@@ -148,9 +176,9 @@ app.post("/signup", async(req, res) => {
           }
         );
       }
-      // if (!passed) {
-      //   res.redirect("/index");
-      // }
+      if (!passed) {
+        res.redirect("/index");
+      }
     }
   
 });
@@ -177,6 +205,14 @@ const checkEmail = async(email) => {
     `SELECT * FROM users
       WHERE email = $1`,
     [email]
+  );
+  return response.rows;
+}
+
+const getAvailableTables = async() => {
+  var response = await pool.query(
+    `SELECT * FROM tables
+      WHERE available = TRUE`,
   );
   return response.rows;
 }
