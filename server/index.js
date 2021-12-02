@@ -44,15 +44,19 @@ app.get('/', (req, res) => {
 });
 
 app.get("/available_tables", async(req, res) => {
-  const availableTables = await getAvailableTables();
-  console.log(availableTables);
+  const availableTables = await getAvailableTables(req.session.guests);
+  // console.log(availableTables);
   res.render(path.join(dirname + '/available_tables.html'), {availableTables:availableTables});
 });
 
 app.get('/redirect_page', (req, res) => {
-  result = req.session.table_num
-  console.log(req.session);
+  console.log(req.session)
   res.render(path.join(dirname + '/redirect_page.html'), {message: req.flash('error')});
+})
+
+app.get('/confirmation', (req, res) => {
+  console.log(req.session);
+  res.render(path.join(dirname + '/confirmation.html'), {availability: req.session.availability, table_num: req.session.table_num, table_size: req.session.table_size});
 })
 
 app.get('/signup', (req, res) => {
@@ -71,25 +75,33 @@ app.post("/index", async(req, res) => {
     let {name, phone, email, date, time, guests, search} = req.body;
     let errors = [];
     passed = true;
-    console.log(name, phone, email, date, time, guests, search)
-    if (!name || !phone || !email || !date || !time ||!guests) {
-        passed = false;
-        errors.push({message: "Please enter all fields"});}
+    // console.log(name, phone, email, date, time, guests, search);
+    req.session.name = name;
+    req.session.phone = phone;
+    req.session.email = email;
+    req.session.date = date;
+    req.session.time = time;
+    req.session.guests = guests;
+    req.session.save(); 
+    res.redirect("/available_tables");
+    // if (!name || !phone || !email || !date || !time ||!guests) {
+    //     passed = false;
+    //     errors.push({message: "Please enter all fields"});}
       
-        if (passed) {
-          await pool.query(
-            `INSERT INTO reservations (name, phone_num, email, date, time, guests)
-                VALUES ($1, $2, $3, $4, $5, $6)`,
-            [name, phone, email, date, time, guests],
-            (err, results) => {
-              if (err) {
-                throw err;
-              }
-              console.log("Searching for Availibility");
-              res.redirect("/index");
-            }
-          );
-        }
+    //     if (passed) {
+    //       await pool.query(
+    //         `INSERT INTO reservations (name, phone_num, email, date, time, guests)
+    //             VALUES ($1, $2, $3, $4, $5, $6)`,
+    //         [name, phone, email, date, time, guests],
+    //         (err, results) => {
+    //           if (err) {
+    //             throw err;
+    //           }
+    //           console.log("Searching for Availibility");
+    //           res.redirect("/index");
+    //         }
+    //       );
+    //     }
 
 });
 
@@ -121,6 +133,46 @@ app.post("/available_tables", async(req, res) => {
   // console.log(req.body.table_num);
   // console.log(req.session);
   // res.redirect("/redirect_page");
+});
+
+app.post("/confirmation", async(req, res) => {
+  passed = true;
+  let errors = [];
+  console.log(req.session);
+    if (!req.session.name || !req.session.phone || !req.session.email || !req.session.date || !req.session.time ||!req.session.guests) {
+    passed = false;
+    errors.push({message: "Please enter all fields"});}
+  
+    if (passed) {
+      await pool.query(
+        `INSERT INTO reservations (name, phone_num, email, date, time, guests)
+            VALUES ($1, $2, $3, $4, $5, $6)`,
+        [req.session.name, req.session.phone, req.session.email, req.session.date, req.session.time, req.session.guests],
+        (err, results) => {
+          if (err) {
+            throw err;
+          }
+          // console.log("Searching for Availibility");
+          // res.redirect("/index");
+        }
+      );
+    }
+    if (passed) {
+      await pool.query(
+        `UPDATE tables
+        SET available = 'false'
+        WHERE table_id = '${req.session.table_num}';`,
+        (err, results) => {
+          if (err) {
+            throw err;
+          }
+          console.log("Searching for Availibility");
+          // res.redirect("/index");
+        }
+      );
+    }
+    
+res.redirect("/index");
 });
 
 app.post("/signup", async(req, res) => {
@@ -209,10 +261,26 @@ const checkEmail = async(email) => {
   return response.rows;
 }
 
-const getAvailableTables = async() => {
+const getAvailableTables = async(guests) => {
   var response = await pool.query(
     `SELECT * FROM tables
-      WHERE available = TRUE`,
+      WHERE available = TRUE AND seats = ${guests}`,
   );
+  target = guests;
+  console.log(response.rows.length);
+  if (response.rows.length == 0) {
+    remainder = guests % 2;
+    if (remainder == 0) {
+      target = parseInt(target) + 2;
+    }
+    else {
+      target = parseInt(target) + 1;
+    }
+    console.log(target);
+    var response = await pool.query(
+      `SELECT * FROM tables
+        WHERE available = TRUE AND seats = ${target}`,
+    );
+  }
   return response.rows;
 }
