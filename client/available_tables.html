@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Available Tables</title>
+    <!-- Font Icon -->
+    <link rel="stylesheet" href="fonts/material-icon/css/material-design-iconic-font.min.css">
+
+    <!-- Main css -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="main">
+
+        <!-- Sign in  Form -->
+        <section class="sign-in">
+            <div class="container">
+                <table id="table">
+                    <thead >
+                      <tr>
+                        <th>Table Number</th>
+                        <th>Availability</th>
+                        <th>Max Seats</th>
+                      </tr>
+                    </thead>
+                    <tbody >
+                      <% availableTables.forEach(function(entry) {%>
+                        <tr> 
+                          <td><%= entry.table_id %></td>
+                          <td><%= entry.available %></td>
+                          <td><%= entry.seats %></td>
+    
+                        </tr>
+                      <% }); %>
+                    </tbody>
+                  </table>
+                  <!-- <form method="POST" class="register-form" id="register-form" action='/available_tables'> -->
+                  <input type="submit" id="submit" value="submit"/>
+                </form>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- JS -->
+    <script>
+        // $("#table tr").click(function(){
+        //     $(this).addClass('selected').siblings().removeClass('selected');    
+        //     var value=$(this).find('td:first').html();
+        //     alert(value);    
+        // });
+
+        // $(document).on('click', '#table tr', function(){ 
+        //     alert($(this).find('td:first').html()) 
+        // }); 
+
+        // function highlight(e) {
+        //     if (selected[0]) selected[0].className = '';
+        //     e.target.parentNode.className = 'selected';
+        // }
+
+        // var table = document.getElementById('table'),
+        //     selected = table.getElementsByClassName('selected');
+        // table.onclick = highlight;
+
+        // function fnselect(){
+        //     alert($("tr.selected td:first" ).html());
+        // }
+
+        // $(document).ready(function(){   
+        // ("#table tr").click(function(){
+        //     $(this).addClass('selected').siblings().removeClass('selected');    
+        //     var value=$(this).find('td:first').html();
+        //     alert(value);    
+        //     });
+        //     $('#tst').on('click', function(e){
+        //         alert($("#table tr.selected td:first").html());
+        //     });
+        // });
+
+        // function highlight(e) {
+        //     if (selected[0]) selected[0].className = '';
+        //     e.target.parentNode.className = 'selected';
+            
+        // }
+
+        // var table = document.getElementById('table'),
+        //     selected = table.getElementsByClassName('selected');
+        // table.onclick = highlight;
+
+        // function fnselect(){
+        // var $row=$(this).parent().find('td');
+        //     var clickeedID=$row.eq(0).text();
+        //   // alert(clickeedID);
+        // }
+
+        // $("#tst").click(function(){
+        //     var value =$(".selected td:first").html();
+        //     value = value || "No row Selected";
+        //     alert(value);
+        // });
+        var table_num = 0;
+        var availability = true;
+        var table_size = 0
+
+        highlight_row();
+        function highlight_row() {
+            var table = document.getElementById('table');
+            var cells = table.getElementsByTagName('td');
+
+            for (var i = 0; i < cells.length; i++) {
+                // Take each cell
+                var cell = cells[i];
+                // do something on onclick event for cell
+                cell.onclick = function () {
+                    // Get the row id where the cell exists
+                    var rowId = this.parentNode.rowIndex;
+
+                    var rowsNotSelected = table.getElementsByTagName('tr');
+                    for (var row = 0; row < rowsNotSelected.length; row++) {
+                        rowsNotSelected[row].style.backgroundColor = "";
+                        rowsNotSelected[row].classList.remove('selected');
+                    }
+                    var rowSelected = table.getElementsByTagName('tr')[rowId];
+                    
+                    rowSelected.className += " selected";
+
+                    msg = 'The ID of the company is: ' + rowSelected.cells[0].innerHTML;
+                    msg += '\nThe cell value is: ' + this.innerHTML;
+                    table_num = rowSelected.cells[0].innerHTML;
+                    availability = rowSelected.cells[1].innerHTML;
+                    table_size = rowSelected.cells[2].innerHTML;
+                    console.log(table_num);
+
+              
+
+                    // alert(rowSelected.cells[0].innerHTML + " " + rowSelected.cells[1].innerHTML);
+                }
+            }
+        }
+        
+        console.log(table_num)
+        var myVar = "test";    
+       
+    </script>
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script> 
+      $(document).ready(function () {
+         $("#submit").click(function () {
+            $.post("/available_tables",
+               {  table_num: table_num,
+                  availability: availability,
+                  table_size: table_size,
+               },
+               function (data, status) {
+                  console.log(data);
+               });
+               window.location.href = "/redirect_page";
+         });
+      });
+      </script>
+
+</body><!-- This templates was made by Colorlib (https://colorlib.com) -->
+</html>
