@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Available Tables</title>
+    <!-- Font Icon -->
+    <link rel="stylesheet" href="fonts/material-icon/css/material-design-iconic-font.min.css">
+
+    <!-- Main css -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="main">
+        <section class="sign-in">
+            <div class="container">
+              <h2 class="container-title">Available Tables</h2>
+                <table class="display-table" id="table">
+                    <thead >
+                      <tr>
+                        <th>Table Number</th>
+                        <th>Max Seats</th>
+                      </tr>
+                    </thead>
+                    <tbody >
+                      <% availableTables.forEach(function(entry) {%>
+                        <tr> 
+                          <td><%= entry.table_id %></td>
+                          <td><%= entry.seats %></td>
+                        </tr>
+                      <% }); %>
+                    </tbody>
+                  </table>
+                  <div class="padding display-flex-center">
+                      <input type="submit" name="submit" id="submit" class="submit-btn" value="Make Reservation"/>
+                  </div>
+                </form>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- JS -->
+    <script>
+        var table_num = 0;
+        var availability = true;
+        var table_size = 0
+
+        highlight_row();
+        function highlight_row() {
+            var table = document.getElementById('table');
+            var cells = table.getElementsByTagName('td');
+
+            for (var i = 0; i < cells.length; i++) {
+                // Take each cell
+                var cell = cells[i];
+                // do something on onclick event for cell
+                cell.onclick = function () {
+                    // Get the row id where the cell exists
+                    var rowId = this.parentNode.rowIndex;
+
+                    var rowsNotSelected = table.getElementsByTagName('tr');
+                    for (var row = 0; row < rowsNotSelected.length; row++) {
+                        rowsNotSelected[row].style.backgroundColor = "";
+                        rowsNotSelected[row].classList.remove('selected');
+                    }
+                    var rowSelected = table.getElementsByTagName('tr')[rowId];
+                    
+                    rowSelected.className += " selected";
+
+                    msg = 'The ID of the company is: ' + rowSelected.cells[0].innerHTML;
+                    msg += '\nThe cell value is: ' + this.innerHTML;
+                    table_num = rowSelected.cells[0].innerHTML;
+                    availability = rowSelected.cells[1].innerHTML;
+                    table_size = rowSelected.cells[2].innerHTML;
+                    console.log(table_num);
+                }
+            }
+        }
+        
+        console.log(table_num)
+        var myVar = "test";    
+       
+    </script>
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script> 
+      $(document).ready(function () {
+         $("#submit").click(function () {
+            $.post("/available_tables",
+               {  table_num: table_num,
+                  availability: availability,
+                  table_size: table_size,
+               },
+               function (data, status) {
+                  console.log(data);
+               });
+              
+               window.location.replace("/redirect_page");
+              
+         });
+      });
+      </script>
+
+</body><!-- This templates was made by Colorlib (https://colorlib.com) -->
+</html>
