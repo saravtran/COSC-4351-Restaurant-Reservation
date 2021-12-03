@@ -10,3 +10,5 @@ Creating Database
 psql -U postgres -d reservation_db -a -f createdb.sql
 
 localhost:3000/index
+
+NOTE: Group members used VSCode Live Share so contributions may not be accurately reflected
