@@ -45,7 +45,7 @@ app.get('/', (req, res) => {
 
 app.get("/available_tables", async(req, res) => {
   const availableTables = await getAvailableTables(req.session.guests);
-  // console.log(availableTables);
+  console.log(availableTables);
   res.render(path.join(dirname + '/available_tables.html'), {availableTables:availableTables});
 });
 
@@ -157,7 +157,14 @@ app.post("/confirmation", async(req, res) => {
         }
       );
     }
-    if (passed) {
+
+    var table_nums = ""
+    if( req.session.table_num.indexOf(',') != -1 ){
+      
+      table_nums = req.session.table_num.split(', ');
+      
+    }
+    if (table_nums.length == 0) {
       await pool.query(
         `UPDATE tables
         SET available = 'false'
@@ -171,6 +178,41 @@ app.post("/confirmation", async(req, res) => {
         }
       );
     }
+
+    if (table_nums.length >= 1) {
+      // console.log(typeof table_nums[0]);
+      // console.log(typeof req.session.table_num);
+      // results = await updateTables(table_nums[0]);
+      // result = await updateTables(table_nums[1]);
+      // results = await updateCombiTables(req.session.table_num);
+
+      await pool.query(
+        `UPDATE tables
+        SET available = 'false'
+        WHERE table_id = '${table_nums[0]}' OR table_id ='${table_nums[1]}';`,
+        (err, results) => {
+          if (err) {
+            throw err;
+          }
+          console.log("Searching for Availibility");
+          // res.redirect("/index");
+        }
+      );
+
+      await pool.query(
+        `UPDATE table_combinations
+        SET available = 'false'
+        WHERE table_id ='${req.session.table_num}';`,
+        (err, results) => {
+          if (err) {
+            throw err;
+          }
+          console.log("Searching for Availibility");
+          // res.redirect("/index");
+        }
+      );
+    }
+
     
 res.redirect("/index");
 });
@@ -266,21 +308,47 @@ const getAvailableTables = async(guests) => {
     `SELECT * FROM tables
       WHERE available = TRUE AND seats = ${guests}`,
   );
+
   target = guests;
   console.log(response.rows.length);
   if (response.rows.length == 0) {
-    remainder = guests % 2;
-    if (remainder == 0) {
-      target = parseInt(target) + 2;
-    }
-    else {
-      target = parseInt(target) + 1;
-    }
-    console.log(target);
     var response = await pool.query(
-      `SELECT * FROM tables
-        WHERE available = TRUE AND seats = ${target}`,
+      `SELECT *
+       FROM table_combinations 
+      WHERE available = TRUE AND seats = ${guests}`,
     );
+    
+    if (response.rows.length == 0) {
+      remainder = guests % 2;
+      if (remainder == 0) {
+        target = parseInt(target) + 2;
+      }
+      else {
+        target = parseInt(target) + 1;
+      }
+      console.log(target);
+      var response = await pool.query(
+        `SELECT * FROM tables
+          WHERE available = TRUE AND seats = ${target}`,
+      );
+    }
+    
   }
+  return response.rows;
+}
+
+const updateTables = async(table_id) => {
+  var response = await pool.query(
+    `UPDATE tables
+    SET available = FALSE WHERE table_id = ${table_id}`,
+  );
+  return response.rows;
+}
+
+const updateCombiTables = async(table_id) => {
+  var response = await pool.query(
+    `UPDATE table_combinations
+    SET available = FALSE WHERE table_id = ${table_id}`,
+  );
   return response.rows;
 }
