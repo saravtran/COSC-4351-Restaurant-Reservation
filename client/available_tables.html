@@ -14,15 +14,13 @@
 <body>
 
     <div class="main">
-
-        <!-- Sign in  Form -->
         <section class="sign-in">
             <div class="container">
-                <table id="table">
+              <h2 class="container-title">Available Tables</h2>
+                <table class="display-table" id="table">
                     <thead >
                       <tr>
                         <th>Table Number</th>
-                        <th>Availability</th>
                         <th>Max Seats</th>
                       </tr>
                     </thead>
@@ -30,15 +28,14 @@
                       <% availableTables.forEach(function(entry) {%>
                         <tr> 
                           <td><%= entry.table_id %></td>
-                          <td><%= entry.available %></td>
                           <td><%= entry.seats %></td>
-    
                         </tr>
                       <% }); %>
                     </tbody>
                   </table>
-                  <!-- <form method="POST" class="register-form" id="register-form" action='/available_tables'> -->
-                  <input type="submit" id="submit" value="submit"/>
+                  <div class="padding display-flex-center">
+                      <input type="submit" name="submit" id="submit" class="submit-btn" value="Make Reservation"/>
+                  </div>
                 </form>
             </div>
         </section>
@@ -47,61 +44,6 @@
 
     <!-- JS -->
     <script>
-        // $("#table tr").click(function(){
-        //     $(this).addClass('selected').siblings().removeClass('selected');    
-        //     var value=$(this).find('td:first').html();
-        //     alert(value);    
-        // });
-
-        // $(document).on('click', '#table tr', function(){ 
-        //     alert($(this).find('td:first').html()) 
-        // }); 
-
-        // function highlight(e) {
-        //     if (selected[0]) selected[0].className = '';
-        //     e.target.parentNode.className = 'selected';
-        // }
-
-        // var table = document.getElementById('table'),
-        //     selected = table.getElementsByClassName('selected');
-        // table.onclick = highlight;
-
-        // function fnselect(){
-        //     alert($("tr.selected td:first" ).html());
-        // }
-
-        // $(document).ready(function(){   
-        // ("#table tr").click(function(){
-        //     $(this).addClass('selected').siblings().removeClass('selected');    
-        //     var value=$(this).find('td:first').html();
-        //     alert(value);    
-        //     });
-        //     $('#tst').on('click', function(e){
-        //         alert($("#table tr.selected td:first").html());
-        //     });
-        // });
-
-        // function highlight(e) {
-        //     if (selected[0]) selected[0].className = '';
-        //     e.target.parentNode.className = 'selected';
-            
-        // }
-
-        // var table = document.getElementById('table'),
-        //     selected = table.getElementsByClassName('selected');
-        // table.onclick = highlight;
-
-        // function fnselect(){
-        // var $row=$(this).parent().find('td');
-        //     var clickeedID=$row.eq(0).text();
-        //   // alert(clickeedID);
-        // }
-
-        // $("#tst").click(function(){
-        //     var value =$(".selected td:first").html();
-        //     value = value || "No row Selected";
-        //     alert(value);
-        // });
         var table_num = 0;
         var availability = true;
         var table_size = 0
@@ -134,10 +76,6 @@
                     availability = rowSelected.cells[1].innerHTML;
                     table_size = rowSelected.cells[2].innerHTML;
                     console.log(table_num);
-
-              
-
-                    // alert(rowSelected.cells[0].innerHTML + " " + rowSelected.cells[1].innerHTML);
                 }
             }
         }

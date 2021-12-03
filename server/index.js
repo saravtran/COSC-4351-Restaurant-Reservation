@@ -45,7 +45,7 @@ app.get('/', (req, res) => {
 
 app.get("/available_tables", async(req, res) => {
   const availableTables = await getAvailableTables(req.session.guests);
-  console.log(availableTables);
+  // console.log(availableTables);
   res.render(path.join(dirname + '/available_tables.html'), {availableTables:availableTables});
 });
 
@@ -56,7 +56,19 @@ app.get('/redirect_page', (req, res) => {
 
 app.get('/confirmation', (req, res) => {
   console.log(req.session);
-  res.render(path.join(dirname + '/confirmation.html'), {availability: req.session.availability, table_num: req.session.table_num, table_size: req.session.table_size});
+  holiday_str = "";
+  if (req.session.holiday == true) {
+    holiday_str = "This is a holiday, an additional fee will be charged."
+  }
+  res.render(path.join(dirname + '/confirmation.html'), {
+    name:req.session.name,
+    date:req.session.date,
+    availability: req.session.availability, 
+    table_num: req.session.table_num, 
+    table_size: req.session.guests, 
+    time:req.session.time,
+    holiday:holiday_str
+  });
 })
 
 app.get('/signup', (req, res) => {
@@ -67,8 +79,17 @@ app.get('/signin', (req, res) => {
     res.render(path.join(dirname + '/signin.html'), {message: req.flash('error')});
 });
 
-app.get('/dashboard', (req, res) => {
-  res.render(path.join(dirname + '/dashboard.html'));
+app.get('/dashboard', checkNotAuthenticated, async(req, res) => {
+  // console.log(req.user);
+    const user_data = await getUserData(req.user.email);
+    console.log(user_data);
+    res.render(path.join(dirname + '/dashboard.html'),{
+    name:req.user.name,
+    date:user_data[0].date,
+    table_num: req.session.table_num, 
+    table_size:user_data[0].guests,
+    time:user_data[0].time, 
+  });
 });
 
 app.post("/index", async(req, res) => {
@@ -82,6 +103,8 @@ app.post("/index", async(req, res) => {
     req.session.date = date;
     req.session.time = time;
     req.session.guests = guests;
+    
+    req.session.holiday = isHoliday(date);
     req.session.save(); 
     res.redirect("/available_tables");
     // if (!name || !phone || !email || !date || !time ||!guests) {
@@ -145,9 +168,9 @@ app.post("/confirmation", async(req, res) => {
   
     if (passed) {
       await pool.query(
-        `INSERT INTO reservations (name, phone_num, email, date, time, guests)
-            VALUES ($1, $2, $3, $4, $5, $6)`,
-        [req.session.name, req.session.phone, req.session.email, req.session.date, req.session.time, req.session.guests],
+        `INSERT INTO reservations (name, phone_num, email, date, time, guests, table_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [req.session.name, req.session.phone, req.session.email, req.session.date, req.session.time, req.session.guests, req.session.table_num],
         (err, results) => {
           if (err) {
             throw err;
@@ -201,8 +224,7 @@ app.post("/confirmation", async(req, res) => {
 
       await pool.query(
         `UPDATE table_combinations
-        SET available = 'false'
-        WHERE table_id ='${req.session.table_num}';`,
+        SET available = ((SELECT available FROM tables WHERE table_id = table_a) AND (SELECT available FROM tables WHERE table_id = table_b));`,
         (err, results) => {
           if (err) {
             throw err;
@@ -214,7 +236,7 @@ app.post("/confirmation", async(req, res) => {
     }
 
     
-res.redirect("/index");
+res.redirect("/dashboard");
 });
 
 app.post("/signup", async(req, res) => {
@@ -226,7 +248,7 @@ app.post("/signup", async(req, res) => {
       errors.push({message: " Please enter all fields"});}
     if (pass !== re_pass) {
       errors.push({message: " Passwords do not match"});}
-    if (req.body['agree-term'] != "on") {
+    if (req.body['agree_term'] != "on") {
       errors.push({message: " Please review our terms and conditions."});}
     
     if (errors.length > 0) {
@@ -266,7 +288,7 @@ app.post("/signup", async(req, res) => {
               throw err;
             }
             // req.flash('error', "You are now registered. Please log in to complete your profile.");
-            res.redirect("/signin");
+            res.redirect("/confirmation");
           }
         );
       }
@@ -294,6 +316,15 @@ const checkUser = async(username) => {
   return response.rows;
 }
 
+const getUserData = async(email) => {
+  var response = await pool.query(
+    `SELECT * FROM reservations
+      WHERE email = $1`,
+    [email]
+  );
+  return response.rows;
+}
+
 const checkEmail = async(email) => {
   var response = await pool.query(
     `SELECT * FROM users
@@ -310,7 +341,7 @@ const getAvailableTables = async(guests) => {
   );
 
   target = guests;
-  console.log(response.rows.length);
+  // console.log(response.rows.length);
   if (response.rows.length == 0) {
     var response = await pool.query(
       `SELECT *
@@ -337,18 +368,58 @@ const getAvailableTables = async(guests) => {
   return response.rows;
 }
 
-const updateTables = async(table_id) => {
-  var response = await pool.query(
-    `UPDATE tables
-    SET available = FALSE WHERE table_id = ${table_id}`,
-  );
-  return response.rows;
+// const updateTables = async(table_id) => {
+//   var response = await pool.query(
+//     `UPDATE tables
+//     SET available = FALSE WHERE table_id = ${table_id}`,
+//   );
+//   return response.rows;
+// }
+
+// const updateCombiTables = async(table_id) => {
+//   var response = await pool.query(
+//     `UPDATE table_combinations
+//     SET available = FALSE WHERE table_id = ${table_id}`,
+//   );
+//   return response.rows;
+// }
+
+
+
+function isHoliday(date) {
+  var holidays = ['2022-1-1', 
+    '2021-01-01',
+    '2022-01-18',
+    '2021-01-18',
+    '2022-02-15',
+    '2021-02-15',
+    '2022-05-31',
+    '2021-05-31',
+    '2022-06-19',
+    '2021-06-19',
+    '2022-07-04',
+    '2021-07-04',
+    '2022-09-06',
+    '2022-10-11',
+    '2022-11-11',
+    '2022-11-25',
+    '2022-12-24',
+    '2021-11-25',
+    '2021-12-24',
+    '2022-12-25',
+    '2021-12-24',
+    '2021-12-25']
+    return holidays.includes(date)
+  }
+
+  function checkNotAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+      return next();
+    }
+    res.redirect("/index");
 }
 
-const updateCombiTables = async(table_id) => {
-  var response = await pool.query(
-    `UPDATE table_combinations
-    SET available = FALSE WHERE table_id = ${table_id}`,
-  );
-  return response.rows;
+function isEmpty(value){
+  return (value == null || value.length === 0);
 }
+  module.exports = app;

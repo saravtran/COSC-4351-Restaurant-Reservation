@@ -10,7 +10,8 @@ CREATE TABLE reservations (
     email CHAR(100),
     date DATE,
     time TIME,
-    guests INT
+    guests INT,
+    table_id VARCHAR
 );
 
 CREATE TABLE users (
