@@ -6,7 +6,7 @@ cd server<br>
 npm install<br>
 npm run dev
 
-Creating Database 
+Creating Database<br>
 psql -U postgres -d reservation_db -a -f createdb.sql
 
 localhost:3000/index
